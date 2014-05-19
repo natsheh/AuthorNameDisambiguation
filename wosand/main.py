@@ -21,7 +21,7 @@ import math
 
 def main():
     # FOCUS NAME
-    focus_name = "Abe %"  #Rodriguez Bassand Abe Boussaid
+    focus_name = "Bassand %"  #Rodriguez Bassand Abe Boussaid
     
     # Cosine distance [True, False]
     all = {
@@ -91,7 +91,7 @@ def main():
     final_matrix = final_matrix / counter #/ counter #* mask_matrix 
     
     #save to file
-    np.savetxt("distance_matrix.csv", final_matrix, fmt="%.2e", delimiter=",")
+    #np.savetxt("distance_matrix.csv", final_matrix, fmt="%.2e", delimiter=",")
     
     #plot distance matrices
     plt.figure("Summary")
@@ -212,11 +212,18 @@ def main():
     country_entropy_history_norm = [x/max(country_entropy_history) if max(country_entropy_history)!= 0 else 0 for x in country_entropy_history]
     year_entropy_history_norm = [x/max(year_entropy_history) if max(year_entropy_history)!= 0 else 0 for x in year_entropy_history]
 
+    #log
+    print("\nthresholds = {0}".format(thresholds))
+    print("coauthor_entropy_history_norm = {0}".format(coauthor_entropy_history_norm))
+    print("country_entropy_history_norm = {0}".format(country_entropy_history_norm))
+    print("subject_entropy_history_norm = {0}".format(subject_entropy_history_norm))
+    print("year_entropy_history_norm = {0}".format(year_entropy_history_norm))
+
     #find elbows
-    coauthor_elbow_index = elbow(coauthor_entropy_history_norm, windowSize=4) if max(coauthor_entropy_history)!= 0 else 0
-    subject_elbow_index = elbow(subject_entropy_history_norm, windowSize=4) if max(subject_entropy_history)!= 0 else 0
-    country_elbow_index = elbow(country_entropy_history_norm, windowSize=4) if max(country_entropy_history)!= 0 else 0
-    year_elbow_index = elbow(year_entropy_history_norm, windowSize=4) if max(year_entropy_history)!= 0 else 0
+    coauthor_elbow_index = elbow(coauthor_entropy_history_norm) if max(coauthor_entropy_history)!= 0 else 0
+    subject_elbow_index = elbow(subject_entropy_history_norm) if max(subject_entropy_history)!= 0 else 0
+    country_elbow_index = elbow(country_entropy_history_norm) if max(country_entropy_history)!= 0 else 0
+    year_elbow_index = elbow(year_entropy_history_norm) if max(year_entropy_history)!= 0 else 0
 
     #best cut: average the non zero elbows' x-coordinates
     #Not using coauthors
@@ -227,9 +234,9 @@ def main():
         if e > 0.5: #avoids to include very low entropies
             index_best_cut = index_best_cut + e
             count = count + 1
-    index_best_cut = float(index_best_cut / count) if count != 0 else 0
-    print(index_best_cut)
-    best_cut = thresholds[math.floor(index_best_cut)]
+    index_best_cut = float(index_best_cut/count) if count != 0 else 0
+    #print(index_best_cut)
+    best_cut = thresholds[math.ceil(index_best_cut)]
     print("\nBest cut according to entropies: {0}".format(best_cut))
 
     #plot the overall results
@@ -256,6 +263,7 @@ def main():
     plt.legend()
     thismanager = plt.get_current_fig_manager()
     thismanager.window.setGeometry(15,600,800, 400)
+
 
     #plot clustering according to the best cut
     fig, ax = plt.subplots() 

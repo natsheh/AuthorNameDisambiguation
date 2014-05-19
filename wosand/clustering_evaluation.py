@@ -46,18 +46,23 @@ def evaluate(foundClusters,groundTruth):
     return precision, recall, f_measure
 
 
-def elbow(points, windowSize=4): # Change me if you want
+def elbow(points):
+    windowSize = 3
     differences = []
     for i in range(0,len(points)-1):
         differences.append(points[i+1]-points[i])
+    #print('This is an easter... mothafuckaaaaaaaa')
+    #print(points)
+    #print(differences)
+    secondDerivative = []
+    #print(range(windowSize,len(differences)-windowSize))
+    for i in range(windowSize,len(differences)-windowSize):
+        #print(' ', str(differences[i:i+windowSize]))
+        #print(' ', str(differences[i-windowSize:i]))
+        secondDerivative.append(np.mean(differences[i:i+windowSize])-np.mean(differences[i-windowSize:i]))
 
-    ratios = []
-    for i in range(math.floor(windowSize/2),len(differences)-math.ceil(windowSize/2)):
-        win = np.mean(differences[i-math.floor(windowSize/2):i+math.ceil(windowSize/2)])
-        next_win = np.mean(differences[i-math.floor(windowSize/2)+1:i+math.ceil(windowSize/2)+1]);
-        if win == 0:
-            ratios.append(0)
-        else:
-            ratios.append(next_win/win)
-    return ratios.index(max(ratios)) + windowSize + 1 #plus 1 detects the point above the elbow
+    #print secondDerivative
+    #print(points[secondDerivative.index(max(secondDerivative)) + windowSize])
+    return secondDerivative.index(max(secondDerivative)) + windowSize
+
     
