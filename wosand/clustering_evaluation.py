@@ -47,13 +47,13 @@ def evaluate(foundClusters,groundTruth):
 
 
 def elbow(points):
-    windowSize = 3
+    windowSize = 1
     differences = []
     for i in range(0,len(points)-1):
         differences.append(points[i+1]-points[i])
 
-    print(points)
-    print(differences)
+    #print(points)
+    #print(differences)
     secondDerivative = []
     #print(range(windowSize,len(differences)-windowSize))
     for i in range(windowSize,len(differences)-windowSize):
@@ -61,9 +61,9 @@ def elbow(points):
         #print(' ', str(differences[i-windowSize:i]))
         before = np.array(differences[i-windowSize:i])
         before[before<0] = 0
-        secondDerivative.append(np.mean(before)-np.mean(differences[i-windowSize:i]))
+        secondDerivative.append(np.mean(differences[i:i+windowSize])-np.mean(before))
 
     #print secondDerivative
-    print(points[secondDerivative.index(max(secondDerivative)) + windowSize])
+    #print(points[secondDerivative.index(max(secondDerivative)) + windowSize])
     return secondDerivative.index(max(secondDerivative)) + windowSize
 

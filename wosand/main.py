@@ -21,7 +21,7 @@ import math
 
 def main():
     # FOCUS NAME
-    focus_name = "Bassand %"  #Rodriguez Bassand Abe Boussaid
+    focus_name = "Liu W%"  #Rodriguez Bassand Abe Boussaid
     
     # Cosine distance [True, False]
     all = {
@@ -65,25 +65,27 @@ def main():
     for (k,v) in all.items():
         if v:
             mat_temp = get_cosine_distance_matrix(library,catalog,k,'cosine',mask_matrix)
+            #if k == 'coauthors':
+            #    np.savetxt("coauthors_distance_matrix.csv", mat_temp, fmt="%.2e", delimiter=",")
             #plt.figure(k)
             #plt.imshow(mat_temp, cmap=cm.coolwarm, interpolation='none', vmin=0, vmax=1)
             final_matrix = final_matrix + mat_temp
-            #final_matrix = np.maximum(final_matrix, temp_m) 
             counter = counter + 1
     
     #get graph matrices aggregated by max (counter increases only of 1) 
     graph_mat = None
     for (k,v) in graphs.items():
         if v:
-            if graph_mat is None:    
-                graph_mat = get_graph(library, catalog, focus_name, k)
-            else:
-                graph_mat = np.maximum(get_graph(library, catalog, focus_name, k), graph_mat)
-            #final_matrix = np.maximum(final_matrix, graph_m)
+            if graph_mat is None:
+                graph_mat = np.zeros((len(library), len(library)))
+            mat_temp = get_graph(library, catalog, focus_name, k)
+            #if k == 'coauthorship':
+            #    np.savetxt("coauthors_distance_matrix2.csv", mat_temp, fmt="%.2e", delimiter=",")
+            #plt.figure("Graphs matrix")
+            #plt.imshow(mat_temp, cmap=cm.coolwarm, interpolation='none', vmin=0, vmax=1)
+            graph_mat = np.maximum(mat_temp, graph_mat)
     if graph_mat is not None:
         counter = counter + 1
-        #plt.figure("Graphs matrix")
-        #plt.imshow(graph_mat, cmap=cm.coolwarm, interpolation='none', vmin=0, vmax=1)
         #get final matrix, apply also mask to graph matrix
         final_matrix = final_matrix + (graph_mat * mask_matrix)
                 
@@ -126,7 +128,8 @@ def main():
     coauthor_entropy_history = []
     country_entropy_history = []
     subject_entropy_history = []
-    thresholds = [float(x/100) for x in range(0,225,10)]
+    journal_entropy_history = []
+    thresholds = [float(x/100) for x in range(0,200,10)]
     for threshold in thresholds:
         print("\nClustering with threshold {0}".format(threshold))
         #get the same clusters as the dendrogram 
@@ -140,15 +143,16 @@ def main():
                 clusters[v] = []
             #like assigning Id to clusters... library[k].unique_identifier would be better
             clusters[v].append(library[k].unique_identifier)
-
-        #debug
-        #print("Clustering structure: ", str(list(clusters.values())))
         
+        #num of clusters for current threshold
+        num_clusters = len(clusters)
+
         #evaluation
         precision, recall, f_measure = evaluate(clusters.values(), ground_truth.values())
         print("Precision: {0}".format(precision))
         print("Recall: {0}".format(recall))
         print("Pairwise F1 score: {0}".format(f_measure))
+        print("Complexty (number of clusters): ", num_clusters)
         
         # entropies with respect to features, for each cluster:
         # - first split the feature of interest (e.g. coauthors) and put them in the "entropy_feature" list, keep repetitions 
@@ -159,9 +163,9 @@ def main():
         entropy_subjects = {}
         entropy_countries = {}
         entropy_years = {}
-        num_clusters = len(clusters)
+        entropy_journals = {}
         for clust, author_uids in clusters.items():
-
+            
             #entropy coauthors for the current cluster
             coauthors_in_clusters = []
             for uid in author_uids:
@@ -189,48 +193,50 @@ def main():
                 for year in library[catalog[uid]].year.split(" "):
                     if year.strip(): years_in_clusters.append(year)
             entropy_years[clust] = get_clusters_shannon_entropy(years_in_clusters)
+            
+            #entropy on journal
+            journals_in_clusters = []
+            for uid in author_uids:
+                for journal in library[catalog[uid]].journals.split(" "):
+                    if journal.strip(): journals_in_clusters.append(journal)
+            entropy_journals[clust] = get_clusters_shannon_entropy(journals_in_clusters)
 
         #statistics for the current cluster
         #sum up the entropies or average them
-        total_entropy = sum(entropy_coauthors.values()) + sum(entropy_subjects.values()) + sum(entropy_years.values())
         year_entropy_history.append(sum(entropy_years.values())/num_clusters)
         coauthor_entropy_history.append(sum(entropy_coauthors.values())/num_clusters)
         country_entropy_history.append(sum(entropy_countries.values())/num_clusters)
         subject_entropy_history.append(sum(entropy_subjects.values())/num_clusters)
+        journal_entropy_history.append(sum(entropy_journals.values())/num_clusters)
         
-        """print("Coauthors entropy clusters: ", str(sum(entropy_coauthors.values())))
-        print("Subjects entropy clusters: ", str(sum(entropy_subjects.values())))
-        print("Countries entropy clusters: ", str(sum(entropy_countries.values())))
-        print("Year entropy clusters: ", str(sum(entropy_years.values())))"""
-        print("Partition total entropy of coauthors: ", total_entropy)
-        print("Complexty (number of clusters): ", num_clusters)
-        print("Average entropy per cluster: ", total_entropy/num_clusters)
-    
     #normalization for plotting
     coauthor_entropy_history_norm = [x/max(coauthor_entropy_history) if max(coauthor_entropy_history)!= 0 else 0 for x in coauthor_entropy_history]
     subject_entropy_history_norm = [x/max(subject_entropy_history) if max(subject_entropy_history)!= 0 else 0 for x in subject_entropy_history]
     country_entropy_history_norm = [x/max(country_entropy_history) if max(country_entropy_history)!= 0 else 0 for x in country_entropy_history]
     year_entropy_history_norm = [x/max(year_entropy_history) if max(year_entropy_history)!= 0 else 0 for x in year_entropy_history]
+    journal_entropy_history_norm = [x/max(journal_entropy_history) if max(journal_entropy_history)!= 0 else 0 for x in journal_entropy_history]
 
     #log
-    print("\nthresholds = {0}".format(thresholds))
-    print("coauthor_entropy_history_norm = {0}".format(coauthor_entropy_history_norm))
-    print("country_entropy_history_norm = {0}".format(country_entropy_history_norm))
-    print("subject_entropy_history_norm = {0}".format(subject_entropy_history_norm))
-    print("year_entropy_history_norm = {0}".format(year_entropy_history_norm))
+    #print("\nthresholds = {0}".format(thresholds))
+    #print("coauthor_entropy_history_norm = {0}".format(coauthor_entropy_history_norm))
+    #print("country_entropy_history_norm = {0}".format(country_entropy_history_norm))
+    #print("subject_entropy_history_norm = {0}".format(subject_entropy_history_norm))
+    #print("year_entropy_history_norm = {0}".format(year_entropy_history_norm))
+    #print("journal_entropy_history_norm = {0}".format(journal_entropy_history_norm))
 
     #find elbows
     coauthor_elbow_index = elbow(coauthor_entropy_history_norm) if max(coauthor_entropy_history)!= 0 else 0
     subject_elbow_index = elbow(subject_entropy_history_norm) if max(subject_entropy_history)!= 0 else 0
     country_elbow_index = elbow(country_entropy_history_norm) if max(country_entropy_history)!= 0 else 0
     year_elbow_index = elbow(year_entropy_history_norm) if max(year_entropy_history)!= 0 else 0
+    journal_elbow_index = elbow(journal_entropy_history_norm) if max(journal_entropy_history)!= 0 else 0
 
     #best cut: average the non zero elbows' x-coordinates
     #Not using coauthors
     #TO FIX
     index_best_cut = 0
     count = 0
-    for e in [subject_elbow_index, country_elbow_index, year_elbow_index]:  #coauthor_elbow_index, 
+    for e in [subject_elbow_index, country_elbow_index, journal_elbow_index]:  #coauthor_elbow_index, year_elbow_index
         if e > 0.5: #avoids to include very low entropies
             index_best_cut = index_best_cut + e
             count = count + 1
@@ -247,23 +253,25 @@ def main():
     plt.plot(thresholds, subject_entropy_history_norm, 'b', label="Subjects")
     plt.plot(thresholds, coauthor_entropy_history_norm, 'g', label="Coauthors")
     plt.plot(thresholds, country_entropy_history_norm, 'm', label="Countries")
+    plt.plot(thresholds, journal_entropy_history_norm, 'y', label="Journals")
     plt.plot(thresholds[year_elbow_index], year_entropy_history_norm[year_elbow_index], 'r', marker='o', markersize=10)
     plt.plot(thresholds[subject_elbow_index], subject_entropy_history_norm[subject_elbow_index], 'b', marker='o', markersize=10)
     plt.plot(thresholds[coauthor_elbow_index], coauthor_entropy_history_norm[coauthor_elbow_index], 'g', marker='o', markersize=10)
     plt.plot(thresholds[country_elbow_index], country_entropy_history_norm[country_elbow_index], 'm', marker='o', markersize=10)
+    plt.plot(thresholds[journal_elbow_index], journal_entropy_history_norm[journal_elbow_index], 'y', marker='o', markersize=10)
     max_x = max(thresholds)
     max_y = max(max(
         year_entropy_history_norm,
         subject_entropy_history_norm,
         coauthor_entropy_history_norm,
-        country_entropy_history_norm
+        country_entropy_history_norm,
+        journal_entropy_history_norm
     ))
     plt.vlines(best_cut, 0, max_y)
     plt.axis([0, max_x, 0, max_y])  
     plt.legend()
     thismanager = plt.get_current_fig_manager()
     thismanager.window.setGeometry(15,600,800, 400)
-
 
     #plot clustering according to the best cut
     fig, ax = plt.subplots() 
