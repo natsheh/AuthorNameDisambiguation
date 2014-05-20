@@ -59,9 +59,11 @@ def elbow(points):
     for i in range(windowSize,len(differences)-windowSize):
         #print(' ', str(differences[i:i+windowSize]))
         #print(' ', str(differences[i-windowSize:i]))
-        if np.min(differences[i-windowSize:i])>=0:
-            secondDerivative.append(np.mean(differences[i:i+windowSize])-np.mean(differences[i-windowSize:i]))
+        before = np.array(differences[i-windowSize:i])
+        before[before<0] = 0
+        secondDerivative.append(np.mean(before)-np.mean(differences[i-windowSize:i]))
 
     #print secondDerivative
     print(points[secondDerivative.index(max(secondDerivative)) + windowSize])
-    return secondDerivative.index(max(secondDerivative)) + windowSi
+    return secondDerivative.index(max(secondDerivative)) + windowSize
+
