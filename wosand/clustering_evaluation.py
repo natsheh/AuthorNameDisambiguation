@@ -51,18 +51,17 @@ def elbow(points):
     differences = []
     for i in range(0,len(points)-1):
         differences.append(points[i+1]-points[i])
-    #print('This is an easter... mothafuckaaaaaaaa')
-    #print(points)
-    #print(differences)
+
+    print(points)
+    print(differences)
     secondDerivative = []
     #print(range(windowSize,len(differences)-windowSize))
     for i in range(windowSize,len(differences)-windowSize):
         #print(' ', str(differences[i:i+windowSize]))
         #print(' ', str(differences[i-windowSize:i]))
-        secondDerivative.append(np.mean(differences[i:i+windowSize])-np.mean(differences[i-windowSize:i]))
+        if np.min(differences[i-windowSize:i])>=0:
+            secondDerivative.append(np.mean(differences[i:i+windowSize])-np.mean(differences[i-windowSize:i]))
 
     #print secondDerivative
-    #print(points[secondDerivative.index(max(secondDerivative)) + windowSize])
-    return secondDerivative.index(max(secondDerivative)) + windowSize
-
-    
+    print(points[secondDerivative.index(max(secondDerivative)) + windowSize])
+    return secondDerivative.index(max(secondDerivative)) + windowSi
