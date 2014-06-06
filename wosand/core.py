@@ -76,14 +76,14 @@ def get_library(focus_name):
             paper_id = el[2]
             paper_title = preprocessing(el[3], stemming=True, stop_words=STOP_WORDS, min_word_length=2)
             year = preprocessing(el[4], stemming=True, stop_words=STOP_WORDS, min_word_length=2)
-            coauthors = preprocessing(el[5], stemming=False, stop_words=PREFIXES, min_word_length=0).replace(author_name, "")
+            coauthors = preprocessing(el[5], stemming=False, stop_words=PREFIXES, min_word_length=0).replace(author_name, "") #remove the author himself
             subjects = preprocessing(el[6], stemming=True, stop_words=STOP_WORDS, min_word_length=2)
             keywords = preprocessing(el[7], stemming=True, stop_words=STOP_WORDS, min_word_length=2)
-            journals = preprocessing(el[8], stemming=True, stop_words=STOP_WORDS, min_word_length=2)
+            journals = preprocessing(el[8], stemming=True, stop_words=STOP_WORDS, min_word_length=0)
             institutions = preprocessing(el[9], stemming=True, stop_words=STOP_WORDS, min_word_length=2)
             ref_authors = preprocessing(el[10], stemming=False, stop_words=PREFIXES, min_word_length=0)
             ref_journals = preprocessing(el[11], stemming=True, stop_words=STOP_WORDS, min_word_length=2)
-            countries = preprocessing(el[12], stemming=True, stop_words=STOP_WORDS, min_word_length=2)
+            countries = preprocessing(el[12], stemming=True, stop_words=STOP_WORDS, min_word_length=2).replace("franc", "") #remove france
             #unique identifier is paper_id concat author_id (solve the problem of 2 authors with the same name in the same paper)
             unique_identifier = str(paper_id) + str(author_id)
             library.insert(paper_tracker, 
@@ -92,7 +92,7 @@ def get_library(focus_name):
                     ref_journals, countries))
             catalog[unique_identifier] = paper_tracker
             paper_tracker = paper_tracker + 1
-            print("{0} - AuthorID: {1} - PaperID: {2} - Title:{3} - Coauthors: {4}".format(paper_tracker, author_id, paper_id, author_name, coauthors)) 
+            print("{0} - AuthorID: {1} - PaperID: {2} - Title:{3} - Extra: {4}".format(paper_tracker, author_id, paper_id, author_name, ref_journals)) 
     #close connection to db
     conn.close()
     return library, catalog
@@ -173,10 +173,12 @@ def get_cosine_distance_matrix(library, catalog, field, distance_type, mask_matr
                 continue
             corpus = []
             block_tracker.append(p1.unique_identifier)
+            block_mask = np.zeros(mat_result.shape)
             #corpus.append(getattr(p1, field))
             for p2 in library: #loop paper2
                 #if p1 == p2: continue
                 if mask_matrix[catalog[p1.unique_identifier]][catalog[p2.unique_identifier]] > 0.4:
+                    block_mask[catalog[p1.unique_identifier]][catalog[p2.unique_identifier]] = 1
                     block_tracker.append(p2.unique_identifier)
                     corpus.append(getattr(p2, field))
                 else:
@@ -187,47 +189,8 @@ def get_cosine_distance_matrix(library, catalog, field, distance_type, mask_matr
             #add to result_matrix with max
             #print(mat_block)
             mat_result = np.maximum(mat_result, mat_block)
-    #other distances
-    
-    #set distance function type
-    """else:
-        if distance_type is "min_edit":
-            f = lambda x,y: get_min_edit_dist(getattr(x, field), getattr(y, field))
-        elif distance_type is "syllab_jaccard":
-            f = lambda x,y: get_syllabes_jaccard_dist(getattr(x, field), getattr(y, field))
-        elif distance_type is "exact_match":
-            f = lambda x,y: get_exact_match_dist(getattr(x, field), getattr(y, field))
-        elif distance_type is "at_least_one":
-            f = lambda x,y: get_at_least_one_dist(getattr(x, field), getattr(y, field))    
 
-        for i in range(len(library)-1): #loop paper1
-            p1 = library[i]
-            for j in range(i+1, len(library)): #loop paper2
-                p2 = library[j]
-                #behave according to distance_type
-                if distance_type is "min_edit":
-                    dist_string, error = get_min_edit_dist(getattr(p1, field), getattr(p2, field))
-                elif distance_type is "syllab_jaccard":
-                    dist_string, error = get_syllabes_jaccard_dist(getattr(p1, field), getattr(p2, field))
-                elif distance_type is "exact_match":
-                    dist_string, error = get_exact_match_dist(getattr(p1, field), getattr(p2, field))
-                elif distance_type is "at_least_one":
-                    dist_string, error = get_at_least_one_dist(getattr(p1, field), getattr(p2, field))    
-                if error: 
-                    index_error[i].append(j)
-                else:
-                    mat_result[catalog[p1.unique_identifier], catalog[p2.unique_identifier]] = dist_string
-                    mat_result[catalog[p2.unique_identifier], catalog[p1.unique_identifier]] = dist_string
-        #max distance for normalization
-        max_dist = np.max(mat_result)
-        #normalize [0,1]
-        if max_dist != 0:
-            mat_result = np.divide(mat_result, max_dist)
-        #correct errors with 0.5 distance
-        for i in index_error:
-            for j in index_error[i]:
-                mat_result[i][j] = DEFAULT_VALUE
-    """
+    
     #this technique requires to set diagonal to 1s
     return mat_result
 
