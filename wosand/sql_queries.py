@@ -24,7 +24,7 @@ FROM
             a.id as article_id,
             a.title as article_title,
             a.year as year,
-            a.journal as journal,
+            a.abbr as journal, #a.journal as journal
             a.authors as authors,
             GROUP_CONCAT( DISTINCT COALESCE(asu.subject, ' ') ORDER BY asu.subject SEPARATOR ' ') AS subjects,
             GROUP_CONCAT( DISTINCT COALESCE(ak.keyword, ' ') ORDER BY ak.keyword SEPARATOR ' ') AS keywords,

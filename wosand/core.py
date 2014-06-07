@@ -64,7 +64,7 @@ def get_library(focus_name):
     library = []
     #catalog keeps track of the association: paper_id+author_id --> matrix_line
     catalog = {}
-    conn.set_group_limit(5000)
+    conn.set_group_limit(1000000)
     #try:
     sql_results = conn.execute(all_info_query)
     if sql_results:
@@ -142,7 +142,7 @@ def get_string_distance_matrix(library, catalog, field, distance_type):
                 mat_result[catalog[p2.unique_identifier], catalog[p1.unique_identifier]] = dist_string
     
     #max distance for normalization
-    max_dist = np.max(mat_result)
+    max_dist = np.max(mat_result) if mat_result != [] else 0
     #normalize [0,1]
     if max_dist != 0:
         mat_result = np.divide(mat_result, max_dist)

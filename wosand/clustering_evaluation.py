@@ -17,22 +17,25 @@ def get_clusters_shannon_entropy(elements_in_clusters):
     return -sum(c/num_elements * math.log(c/num_elements, 2) for c in counter.values())
 
 
-def evaluate(foundClusters,groundTruth):
+def evaluate(foundClusters, groundTruth):
     foundPairs = set()
     groundTruthPairs = set()
-
     for cluster in foundClusters:
         cluster.sort()
         for i in range(0,len(cluster)):
+            foundPairs.add((cluster[i],cluster[i]))
             for j in range(i+1,len(cluster)):
                 foundPairs.add((cluster[i],cluster[j]))
 
     for cluster in groundTruth:
         cluster.sort()
         for i in range(0,len(cluster)):
+            groundTruthPairs.add((cluster[i],cluster[i]))
             for j in range(i+1,len(cluster)):
                 groundTruthPairs.add((cluster[i],cluster[j]))
-                
+       
+    #print("foundPairs", foundPairs)
+    
     if len(foundPairs) == 0:
         precision = 0 
     else: 

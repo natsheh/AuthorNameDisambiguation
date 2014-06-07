@@ -18,17 +18,17 @@ class Paper:
         coauthors=None, institutions=None, journals=None, year=None, subjects=None, 
         keywords=None, ref_authors=None, ref_journals=None, countries=None):
         self.id = paper_id
-        self.title = paper_title
+        self.title = str(paper_title)
         self.author_id = author_id
-        self.author_name = author_name
-        self.coauthors = coauthors
-        self.institutions = institutions
-        self.journals = journals
-        self.year = year
-        self.subjects = subjects
-        self.keywords = keywords
-        self.ref_authors = ref_authors
-        self.ref_journals = ref_journals
-        self.countries = countries
+        self.author_name = str(author_name)
+        self.coauthors = str(coauthors)
+        self.institutions = str(institutions)
+        self.journals = str(journals)
+        self.year = str(year)
+        self.subjects = str(subjects)
+        self.keywords = str(keywords)
+        self.ref_authors = str(ref_authors)
+        self.ref_journals = str(ref_journals)
+        self.countries = str(countries)
         self.unique_identifier = str(paper_id) + str(author_id)
 
