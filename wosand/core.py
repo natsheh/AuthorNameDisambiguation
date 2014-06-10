@@ -15,14 +15,11 @@ from sklearn.decomposition import TruncatedSVD
 from nltk import stem
 
 from connection import Connection
-from sql_queries import INSTITUTION_SQL
-from sql_queries import AUTHOR_ORDERING
-from sql_queries import JARO_WINKLER_MASK
-from sql_queries import PAPER_ALL_INFO
-from graph_queries import COAUTHORSHIP_GRAPH_MATRIX
-from graph_queries import REFERENCES_GRAPH_MATRIX
-from graph_queries import SUBJECTS_GRAPH_MATRIX
-from graph_queries import KEYWORDS_GRAPH_MATRIX
+from sql_queries_production import PAPER_ALL_INFO
+from graph_queries_production import COAUTHORSHIP_GRAPH_MATRIX
+from graph_queries_production import REFERENCES_GRAPH_MATRIX
+from graph_queries_production import SUBJECTS_GRAPH_MATRIX
+from graph_queries_production import KEYWORDS_GRAPH_MATRIX
 
 from classes import Paper
 
@@ -55,7 +52,7 @@ DEFAULT_VALUE = 0.5
 
 #return the cosine similarity matrix (institutions) among papers and the library object
 #that keeps track of the association: matrix line --> paper/author information 
-def get_library(focus_name):
+def get_library(focus_name, debug):
     #initialization
     all_info_query = PAPER_ALL_INFO.format(focus_name)
     conn = Connection()
@@ -70,7 +67,8 @@ def get_library(focus_name):
     if sql_results:
         for el in sql_results:
             #print(el[1],el[2],el[3],el[4],el[5],el[6],el[7],el[8],el[9],el[10],el[11]) 
-            #feature selection     
+            
+            #feature cleaning     
             author_id = str(el[0]) #the disambiguated one for test purposes
             author_name = preprocessing(el[1], stemming=False, stop_words=PREFIXES, min_word_length=0)
             paper_id = el[2]
@@ -84,15 +82,23 @@ def get_library(focus_name):
             ref_authors = preprocessing(el[10], stemming=False, stop_words=PREFIXES, min_word_length=0)
             ref_journals = preprocessing(el[11], stemming=True, stop_words=STOP_WORDS, min_word_length=2)
             countries = preprocessing(el[12], stemming=True, stop_words=STOP_WORDS, min_word_length=2).replace("franc", "") #remove france
+            
             #unique identifier is paper_id concat author_id (solve the problem of 2 authors with the same name in the same paper)
             unique_identifier = str(paper_id) + str(author_id)
+            
+            #printout for production environment
+            printout = str(el[3]) + " [" + str(el[4]) + "]"
+            
+            #add to library
             library.insert(paper_tracker, 
                 Paper(paper_id, paper_title, author_id, author_name, coauthors, 
                     institutions, journals, year, subjects, keywords, ref_authors,
-                    ref_journals, countries))
+                    ref_journals, countries, unique_identifier, printout))
             catalog[unique_identifier] = paper_tracker
             paper_tracker = paper_tracker + 1
-            print("{0} - AuthorID: {1} - PaperID: {2} - Title:{3} - Extra: {4}".format(paper_tracker, author_id, paper_id, author_name, ref_journals)) 
+            if debug:
+                print("{0} - AuthorID: {1} - PaperID: {2} - Title:{3}".format(paper_tracker, author_id, paper_id, author_name)) 
+                
     #close connection to db
     conn.close()
     return library, catalog

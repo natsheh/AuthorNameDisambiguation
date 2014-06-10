@@ -88,7 +88,7 @@ def get_cosine_dist(corpus):
     try:
         #calculate tf-idf matrix in 1 step
         #bring the feature values closer to a Gaussian distribution, compensating for LSA’s erroneous assumptions about textual data
-        tfidf_vectorizer = TfidfVectorizer(sublinear_tf=True, use_idf=True)
+        tfidf_vectorizer = TfidfVectorizer(sublinear_tf=True, use_idf=True, binary=True)
         tfidf_matrix = tfidf_vectorizer.fit_transform(corpus)
         #reduces the space by half the number of variables
         #tfidf_lsa =  TruncatedSVD(n_components=int((tfidf_matrix.shape[1])*0.75), algorithm='randomized', n_iterations=5, random_state=None, tol=0.0)

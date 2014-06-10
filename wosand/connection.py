@@ -2,7 +2,7 @@ import mysql.connector
 from mysql.connector import errorcode
 
 DB_CONFIG = {
-    'host': '127.0.0.1',
+    'host': '',
     'port': '3306',
     'user': '',
     'password': '',
@@ -26,16 +26,20 @@ class Connection:
     
     def execute(self, query, mult=False):
         records = None
-        if self.cnx and query:
-            cursor = self.cnx.cursor()
-            r = cursor.execute(query, multi=mult)
-            if mult:
-                for x in r:
-                    if x.with_rows:
-                        records = x
-            else:
-                records = cursor.fetchall()
-        return records
+        try:
+            if self.cnx and query:
+                cursor = self.cnx.cursor()
+                r = cursor.execute(query, multi=mult)
+                if mult:
+                    for x in r:
+                        if x.with_rows:
+                            records = x
+                else:
+                    records = cursor.fetchall()
+            return records
+        except mysql.connector.Error as err:
+            print("SQL Error with query: {0}".format(query))
+            return None
         
     def close(self):
         self.cnx.close()
