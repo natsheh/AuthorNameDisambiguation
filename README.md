@@ -1,6 +1,6 @@
-#DMKM 2014 - Data Preparation project
 Web Of Science Author Name Disambiguation
 ========================
+DMKM 2014 - Data Preparation project
 
 Authors:
   - Marcello Benedetti
